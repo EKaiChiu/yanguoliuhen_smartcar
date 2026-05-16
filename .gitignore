@@ -1,0 +1,34 @@
+# build output
+build/
+Build/
+Debug/
+Release/
+out/
+dist/
+
+# object files
+*.o
+*.obj
+*.d
+*.lst
+*.map
+*.elf
+*.bin
+*.hex
+*.axf
+
+# logs
+*.log
+
+# temporary files
+*.tmp
+*.bak
+*.swp
+*~
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.cursor/indexes/
+

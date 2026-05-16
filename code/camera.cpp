@@ -1,0 +1,193 @@
+#include "camera.hpp"
+
+#define GRAY_SCALE 256
+
+static uint8 image_threshold = 0;
+
+
+/*
+    大津法阈值计算
+
+    输入：
+        image：一维灰度图
+        col：图像宽度
+        row：图像高度
+
+    输出：
+        最佳二值化阈值
+*/
+static uint8 otsuThreshold(uint8 *image, uint16 col, uint16 row)
+{
+    if(image == NULL)
+    {
+        return 0;
+    }
+
+    uint16 image_width  = col;
+    uint16 image_height = row;
+
+    int hist[GRAY_SCALE] = {0};
+
+    uint32 amount = 0;
+    uint32 pixel_back = 0;
+    uint32 pixel_integral_back = 0;
+    uint32 pixel_integral = 0;
+
+    int32 pixel_integral_fore = 0;
+    int32 pixel_fore = 0;
+
+    double omega_back = 0;
+    double omega_fore = 0;
+    double micro_back = 0;
+    double micro_fore = 0;
+    double sigma_b = -1;
+    double sigma = 0;
+
+    uint16 min_value = 0;
+    uint16 max_value = 0;
+
+    uint8 threshold = 0;
+
+    /*
+        1. 统计灰度直方图
+    */
+    for(uint16 y = 0; y < image_height; y++)
+    {
+        for(uint16 x = 0; x < image_width; x++)
+        {
+            hist[image[y * image_width + x]]++;
+        }
+    }
+
+    /*
+        2. 找最小灰度值
+    */
+    for(min_value = 0; min_value < 256 && hist[min_value] == 0; min_value++)
+    {
+    }
+
+    /*
+        3. 找最大灰度值
+
+        注意：
+        你原文件这里写的是 hist[MinValue]，
+        那样会导致 MaxValue 判断错误。
+        这里必须用 hist[max_value]。
+    */
+    for(max_value = 255; max_value > min_value && hist[max_value] == 0; max_value--)
+    {
+    }
+
+    /*
+        图像只有一个灰度
+    */
+    if(max_value == min_value)
+    {
+        return (uint8)max_value;
+    }
+
+    /*
+        图像只有两个相邻灰度
+    */
+    if(min_value + 1 == max_value)
+    {
+        return (uint8)min_value;
+    }
+
+    /*
+        4. 统计有效像素总数
+    */
+    for(uint16 i = min_value; i <= max_value; i++)
+    {
+        amount += hist[i];
+    }
+
+    if(amount == 0)
+    {
+        return 0;
+    }
+
+    /*
+        5. 统计整幅图灰度积分
+    */
+    for(uint16 i = min_value; i <= max_value; i++)
+    {
+        pixel_integral += hist[i] * i;
+    }
+
+    /*
+        6. 遍历阈值，寻找最大类间方差
+    */
+    for(uint16 i = min_value; i < max_value; i++)
+    {
+        pixel_back += hist[i];
+        pixel_fore = amount - pixel_back;
+
+        if(pixel_back == 0 || pixel_fore == 0)
+        {
+            continue;
+        }
+
+        omega_back = (double)pixel_back / amount;
+        omega_fore = (double)pixel_fore / amount;
+
+        pixel_integral_back += hist[i] * i;
+        pixel_integral_fore = pixel_integral - pixel_integral_back;
+
+        micro_back = (double)pixel_integral_back / pixel_back;
+        micro_fore = (double)pixel_integral_fore / pixel_fore;
+
+        sigma = omega_back * omega_fore *
+                (micro_back - micro_fore) *
+                (micro_back - micro_fore);
+
+        if(sigma > sigma_b)
+        {
+            sigma_b = sigma;
+            threshold = (uint8)i;
+        }
+    }
+
+    return threshold;
+}
+
+
+/*
+    对外二值化函数
+
+    main.cpp 里调用：
+        otsu_threshold(gray_image);
+
+    调用后：
+        gray_image 会被直接改成 0 / 255
+*/
+void otsu_threshold(uint8 *gray_image)
+{
+    if(gray_image == NULL)
+    {
+        return;
+    }
+
+    image_threshold = otsuThreshold(gray_image, UVC_WIDTH, UVC_HEIGHT);
+
+    for(int i = 0; i < UVC_WIDTH * UVC_HEIGHT; i++)
+    {
+        if(gray_image[i] > image_threshold)
+        {
+            gray_image[i] = 255;
+        }
+        else
+        {
+            gray_image[i] = 0;
+        }
+    }
+}
+
+
+/*
+    获取当前阈值，方便屏幕显示调试
+*/
+uint8 camera_get_threshold(void)
+{
+    return image_threshold;
+}
