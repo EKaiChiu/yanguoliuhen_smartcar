@@ -102,7 +102,6 @@ void pid_init(pid_class *pid, float Kp, float Ki, float Kd)
     pid->output_limit = PID_OUTPUT_LIMIT;
 }
 
-
 // =====================================================
 // 速度环 PID
 //
@@ -241,11 +240,7 @@ static void pid_speed_callback(void)
     int cmd_R = 0;
     int cmd_L = 0;
 
-    /*
-        右轮：
-        目标为正时，不允许 PID 把 PWM 拉成反转。
-        这是解决“走走停停、突然不走”的关键。
-    */
+
     if(target_speed_right > 0)
     {
         int ff_R = base_pwm_R * target_speed_right / 300;

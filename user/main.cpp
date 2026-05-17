@@ -32,7 +32,7 @@
 // 0：关闭图传
 // 1：TCP 图传
 // 2：UDP 图传
-#define IMAGE_TRANS_MODE    0
+#define IMAGE_TRANS_MODE    1
 
 
 // ====================== TCP / UDP 配置 ======================
